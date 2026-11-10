@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Triangle side and angle explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #eef2f6; --grid: #dbe3ec; --panel: #ffffff; --ink: #17212b; --muted: #56616d; --line: #c6d0db;
+  --c0: #13807f; --c1: #b97a06; --c2: #6a4cc0;
+  --ok: #1d7a3e; --bad: #b3261e; --ok-bg: #e3f3e8; --bad-bg: #fbe7e5; --na-bg: #e8edf2;
+  --field: #f7f9fb;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121b26; --grid: #1b2633; --panel: #18232f; --ink: #e8edf2; --muted: #a3afbb; --line: #2f3d4c;
+    --c0: #3fc1bf; --c1: #e7ad3c; --c2: #a48df0;
+    --ok: #5fcf86; --bad: #f2877e; --ok-bg: #18382a; --bad-bg: #3d1f1d; --na-bg: #222e3b; --field: #121b26;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121b26; --grid: #1b2633; --panel: #18232f; --ink: #e8edf2; --muted: #a3afbb; --line: #2f3d4c;
+  --c0: #3fc1bf; --c1: #e7ad3c; --c2: #a48df0;
+  --ok: #5fcf86; --bad: #f2877e; --ok-bg: #18382a; --bad-bg: #3d1f1d; --na-bg: #222e3b; --field: #121b26;
+  color-scheme: dark;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  margin: 0; background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px; color: var(--ink);
+  font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 1.0625rem; line-height: 1.5;
+}
+main { max-width: 1160px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+h1 { font-size: clamp(1.5rem, 3.2vw, 2.1rem); line-height: 1.2; margin: 0 0 1rem; }
+h2 { font-size: 1.15rem; margin: 0 0 .6rem; }
+h3 { font-size: 1rem; margin: 1rem 0 .4rem; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; }
+.setup { margin-bottom: 1rem; }
+.setup-grid { display: grid; grid-template-columns: auto auto 1fr; gap: 1rem 1.5rem; align-items: start; }
+@media (max-width: 860px) { .setup-grid { grid-template-columns: 1fr; } }
+fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+legend { font-weight: 700; padding: 0; margin-bottom: .45rem; }
+input[type=text], select, input[type=number] {
+  font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--line);
+  border-radius: 8px; padding: .35rem .5rem;
+}
+input[type=text].bad { border-color: var(--bad); }
+.verts input { width: 3.2rem; text-align: center; font-weight: 700; }
+.verts { display: flex; gap: .4rem; }
+.ordrow { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; margin-top: .4rem; }
+.ordrow select { font-weight: 700; }
+.ordrow.off { opacity: .4; }
+.siderow { display: grid; grid-template-columns: 3.4rem 1fr; gap: .4rem; align-items: center; margin-bottom: .35rem; }
+.siderow b { text-align: right; }
+.siderow input { width: 100%; }
+.err { color: var(--bad); font-size: .9rem; min-height: 0; }
+.hint { color: var(--muted); font-size: .92rem; margin: .5rem 0 0; }
+.toprow { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+.statement { font-size: 1.15rem; margin: 0 0 1rem; padding: .7rem 1rem; border-left: 5px solid var(--c0); background: var(--panel); border-radius: 0 10px 10px 0; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1rem; }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+.stage svg { width: 100%; height: auto; display: block; }
+.status { margin-top: .5rem; padding: .6rem .8rem; border-radius: 10px; font-weight: 700; }
+.status.ok { background: var(--ok-bg); color: var(--ok); }
+.status.bad { background: var(--bad-bg); color: var(--bad); }
+.control { margin-top: 1rem; }
+.xrow { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.xrow label { font-size: 1.6rem; font-weight: 700; }
+.xrow input[type=number] { width: 7rem; font-size: 1.4rem; font-weight: 700; }
+.range-set { margin-left: auto; display: flex; gap: .35rem; align-items: center; color: var(--muted); font-size: .92rem; }
+.range-set input { width: 4.6rem; font-size: .92rem; }
+input[type=range] { width: 100%; margin: .8rem 0 .3rem; accent-color: var(--c0); height: 1.6rem; }
+.btns { display: flex; gap: .4rem; flex-wrap: wrap; }
+.btns-label { color: var(--muted); font-size: .9rem; margin: .2rem 0 .3rem; }
+button {
+  font: inherit; font-size: .93rem; padding: .3rem .65rem; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button.edge { border-style: dashed; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--c0); outline-offset: 2px; }
+.numline { margin-top: 1rem; }
+.numline svg { width: 100%; height: auto; display: block; }
+.checks { list-style: none; margin: 0 0 .6rem; padding: 0; }
+.checks li { display: flex; gap: .6rem; align-items: flex-start; padding: .4rem 0; border-top: 1px solid var(--line); }
+.checks li:first-child { border-top: none; }
+.mark { flex: 0 0 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .95rem; }
+.mark.ok { background: var(--ok-bg); color: var(--ok); }
+.mark.bad { background: var(--bad-bg); color: var(--bad); }
+.mark.na { background: var(--na-bg); color: var(--muted); }
+.work { color: var(--muted); font-size: .95rem; display: block; }
+.pairs { display: grid; grid-template-columns: auto auto 1fr; gap: .3rem .6rem; align-items: center; font-size: .98rem; margin-bottom: .6rem; }
+.sw { width: .9rem; height: .9rem; border-radius: 3px; display: inline-block; }
+.toggle { display: flex; align-items: center; gap: .5rem; font-size: .95rem; color: var(--muted); }
+.toggle input { width: 1.1rem; height: 1.1rem; accent-color: var(--c0); }
+.solution { margin-top: 1rem; }
+.sol-table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.sol-table td { padding: .4rem .5rem; border-top: 1px solid var(--line); vertical-align: top; }
+.sol-table td:first-child { white-space: nowrap; }
+.sol-table tr.group td { font-weight: 700; background: var(--na-bg); }
+.final { margin-top: .9rem; font-size: 1.3rem; font-weight: 700; color: var(--ok); }
+.final.none { color: var(--bad); }
+.note { color: var(--muted); font-size: .95rem; margin: .6rem 0 0; max-width: 75ch; }
+.hidden-answer .answer { display: none; }
+.scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main id="app">
+  <h1>Triangle sides and angles: what can x be?</h1>
+
+  <section class="panel setup" aria-label="Problem setup">
+    <div class="toprow">
+      <h2 style="margin:0">Set up the problem</h2>
+      <label class="toggle">Load an example
+        <select id="preset">
+          <option value="">Choose…</option>
+          <option value="orig">Angle order given (JK = 12 + x)</option>
+          <option value="exist">Does a triangle exist? (AB = x + 4)</option>
+          <option value="neg">Negative x can work (KL = 6 − x)</option>
+          <option value="none">A trap: no solution (PQ = 3x − 2)</option>
+        </select>
+      </label>
+    </div>
+    <div class="setup-grid">
+      <fieldset>
+        <legend>Vertices</legend>
+        <div class="verts">
+          <input type="text" id="v0" maxlength="2" aria-label="First vertex">
+          <input type="text" id="v1" maxlength="2" aria-label="Second vertex">
+          <input type="text" id="v2" maxlength="2" aria-label="Third vertex">
+        </div>
+        <div class="err" id="vErr"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Angle order</legend>
+        <label class="toggle"><input type="checkbox" id="orderOn"> An angle order is given</label>
+        <div class="ordrow" id="ordrow">
+          m∠<select id="o0" aria-label="Smallest angle"></select> &lt;
+          m∠<select id="o1" aria-label="Middle angle"></select> &lt;
+          m∠<select id="o2" aria-label="Largest angle"></select>
+        </div>
+        <div class="err" id="oErr"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Side lengths in terms of x</legend>
+        <div class="siderow"><b id="n12"></b><input type="text" id="e12" aria-describedby="err12"></div>
+        <div class="err" id="err12"></div>
+        <div class="siderow"><b id="n23"></b><input type="text" id="e23" aria-describedby="err23"></div>
+        <div class="err" id="err23"></div>
+        <div class="siderow"><b id="n13"></b><input type="text" id="e13" aria-describedby="err13"></div>
+        <div class="err" id="err13"></div>
+      </fieldset>
+    </div>
+    <p class="hint">Type expressions like 2x + 3, 20 − x, 3(x − 1), x/2, or x^2. Constants like 15 work too.</p>
+  </section>
+
+  <p class="statement" id="statement"></p>
+
+  <div class="layout">
+    <section class="panel stage" aria-label="Triangle drawing">
+      <svg id="tri" viewBox="0 0 640 400" role="img" aria-label="Triangle for the current value of x"></svg>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+
+      <div class="control">
+        <div class="xrow">
+          <label for="xnum">x =</label>
+          <input type="number" id="xnum" step="any">
+          <div class="range-set">
+            Slider from <input type="number" id="xmin" step="any" aria-label="Slider minimum">
+            to <input type="number" id="xmax" step="any" aria-label="Slider maximum">
+            <button id="autoRange" type="button">Auto</button>
+          </div>
+        </div>
+        <input id="x" type="range" aria-label="Value of x">
+        <div class="btns-label">Try a value (dashed buttons are boundary values):</div>
+        <div class="btns" id="jumps"></div>
+      </div>
+
+      <div class="numline">
+        <svg id="nl" viewBox="0 0 640 200" role="img" aria-label="Number line showing the restrictions on x"></svg>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Checks for the current value of x">
+      <h2>Side lengths right now</h2>
+      <div class="pairs" id="pairs"></div>
+      <div id="checks"></div>
+      <label class="toggle" style="margin-top:.6rem"><input type="checkbox" id="arcs" checked> Show compass arcs</label>
+      <label class="toggle" style="margin-top:.4rem"><input type="checkbox" id="hideAns"> Hide the answer for class discussion</label>
+      <p class="note">Each angle and the side across from it share a color. The arcs mark every point at the right distance from the two base vertices. The third vertex exists only where they cross.</p>
+    </section>
+  </div>
+
+  <section class="panel solution answer" aria-label="Solving for x">
+    <h2>Solving for x</h2>
+    <div class="scroll"><table class="sol-table" id="solTable"></table></div>
+    <div class="final" id="final"></div>
+    <p class="note" id="solNotes"></p>
+  </section>
+</main>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const COL = ['var(--c0)', 'var(--c1)', 'var(--c2)'];
+  const EPS = 1e-9;
+
+  const PRESETS = {
+    orig:  { v: ['J','K','L'], orderOn: true,  ord: [0,1,2], e12: '12 + x', e23: '20 - x', e13: '15', x: 8 },
+    exist: { v: ['A','B','C'], orderOn: false, ord: [0,1,2], e12: 'x + 4',  e23: '2x - 1', e13: '13', x: 6 },
+    neg:   { v: ['J','K','L'], orderOn: true,  ord: [0,1,2], e12: '10',     e23: '6 - x',  e13: '8 + x', x: 0 },
+    none:  { v: ['P','Q','R'], orderOn: true,  ord: [2,0,1], e12: '3x - 2', e23: 'x + 5',  e13: '2x + 1', x: 4 }
+  };
+
+  let state = JSON.parse(JSON.stringify(PRESETS.orig));
+  try {
+    const saved = localStorage.getItem('tri-explorer-v2');
+    if (saved) state = Object.assign(state, JSON.parse(saved));
+  } catch (e) {}
+  const save = () => { try { localStorage.setItem('tri-explorer-v2', JSON.stringify(state)); } catch (e) {} };
+
+  // ---------- formatting ----------
+  const minus = s => s.replace(/-/g, '−');
+  function fmt(n) {
+    if (!isFinite(n)) return '—';
+    let r = Math.round(n * 100) / 100;
+    if (r === 0) r = 0;
+    return minus(String(r));
+  }
+  function snap(v) {
+    if (!isFinite(v)) return { v, label: null };
+    for (let q = 1; q <= 24; q++) {
+      const p = Math.round(v * q);
+      if (Math.abs(p / q - v) < 5e-5) {
+        const val = p / q;
+        if ([1, 2, 4, 5, 8, 10, 20].includes(q)) return { v: val, label: minus(String(val)) };
+        const s = (p < 0 ? '−' : '') + Math.abs(p) + '/' + q;
+        return { v: val, label: s + ' (≈ ' + fmt(val) + ')', short: s };
+      }
+    }
+    return { v, label: '≈ ' + minus(v.toFixed(3)), approx: true };
+  }
+  const lab = v => snap(v).label;
+  const shortLab = v => { const s = snap(v); return s.short || s.label; };
+  const prettyExpr = s => minus(s.trim().replace(/\*/g, '·').replace(/\s+/g, ' '));
+
+  // ---------- expression parser ----------
+  function parseExpr(src) {
+    const s = src.replace(/[−–]/g, '-').replace(/[×·]/g, '*').replace(/X/g, 'x').replace(/\s+/g, '');
+    if (!s) throw new Error('Enter an expression.');
+    let i = 0;
+    const peek = () => s[i];
+    function num() {
+      const m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
+      if (!m) return null;
+      i += m[0].length;
+      const v = parseFloat(m[0]);
+      return () => v;
+    }
+    function primary() {
+      const c = peek();
+      if (c === undefined) throw new Error('The expression ends too early.');
+      if (c === 'x') { i++; return x => x; }
+      if (c === '(') {
+        i++; const e = expr();
+        if (peek() !== ')') throw new Error('A “)” is missing.');
+        i++; return e;
+      }
+      const n = num(); if (n) return n;
+      throw new Error('“' + c + '” isn’t allowed here. Use numbers, x, + − * / ^ and parentheses.');
+    }
+    function power() {
+      const b = primary();
+      if (peek() === '^') { i++; const e = unary(); return x => Math.pow(b(x), e(x)); }
+      return b;
+    }
+    function unary() {
+      if (peek() === '-') { i++; const f = unary(); return x => -f(x); }
+      if (peek() === '+') { i++; return unary(); }
+      return power();
+    }
+    function term() {
+      let f = unary();
+      for (;;) {
+        const c = peek();
+        if (c === '*' || c === '/') {
+          i++; const g = unary(), a = f;
+          f = c === '*' ? x => a(x) * g(x) : x => a(x) / g(x);
+        } else if (c === 'x' || c === '(' || (c !== undefined && /[\d.]/.test(c))) {
+          const g = power(), a = f; f = x => a(x) * g(x);
+        } else return f;
+      }
+    }
+    function expr() {
+      let f = term();
+      while (peek() === '+' || peek() === '-') {
+        const c = s[i++]; const g = term(), a = f;
+        f = c === '+' ? x => a(x) + g(x) : x => a(x) - g(x);
+      }
+      return f;
+    }
+    const f = expr();
+    if (i < s.length) throw new Error('“' + s[i] + '” isn’t allowed here.');
+    return f;
+  }
+  function isLinear(f) {
+    const a = f(0), b = f(1) - f(0);
+    return [-3, 2.5, 7.25, -11].every(t => { const v = f(t); return isFinite(v) && Math.abs(v - (a + b * t)) < 1e-7 * (1 + Math.abs(v)); });
+  }
+
+  // ---------- solving h(x) > 0 numerically ----------
+  const R = 200, N = 40000;
+  function solveSet(h) {
+    const test = x => { const v = h(x); return isFinite(v) && v > EPS; };
+    const step = 2 * R / N, out = [];
+    let prev = test(-R), start = prev ? -Infinity : null;
+    for (let k = 1; k <= N; k++) {
+      const x = -R + k * step, cur = test(x);
+      if (cur !== prev) {
+        let a = x - step, b = x;
+        for (let it = 0; it < 60; it++) { const m = (a + b) / 2; if (test(m) === prev) a = m; else b = m; }
+        const bd = snap((a + b) / 2).v;
+        if (cur) start = bd; else out.push({ lo: start, hi: bd });
+        prev = cur;
+      }
+    }
+    if (prev) out.push({ lo: start, hi: Infinity });
+    return out;
+  }
+  function intersect(A, B) {
+    const out = []; let i = 0, j = 0;
+    while (i < A.length && j < B.length) {
+      const lo = Math.max(A[i].lo, B[j].lo), hi = Math.min(A[i].hi, B[j].hi);
+      if (lo < hi) out.push({ lo, hi });
+      if (A[i].hi < B[j].hi) i++; else j++;
+    }
+    return out;
+  }
+  const ALL = [{ lo: -Infinity, hi: Infinity }];
+  function setText(S) {
+    if (!S.length) return 'no value of x';
+    return S.map(({ lo, hi }) => {
+      if (lo === -Infinity && hi === Infinity) return 'every value of x';
+      if (lo === -Infinity) return 'x < ' + lab(hi);
+      if (hi === Infinity) return 'x > ' + lab(lo);
+      return shortLab(lo) + ' < x < ' + shortLab(hi);
+    }).join(' or ');
+  }
+
+  // ---------- model ----------
+  let M = null;
+  function build() {
+    const V = state.v.map((s, i) => (s || '').trim() || ['?', '?', '?'][i]);
+    const n12 = V[0] + V[1], n23 = V[1] + V[2], n13 = V[0] + V[2];
+    $('n12').textContent = n12 + ' ='; $('n23').textContent = n23 + ' ='; $('n13').textContent = n13 + ' =';
+    $('vErr').textContent = new Set(V).size < 3 ? 'Use three different vertex names.' : '';
+
+    const f = {}, errs = {};
+    for (const k of ['e12', 'e23', 'e13']) {
+      try { f[k] = parseExpr(state[k]); $('err' + k.slice(1)).textContent = ''; $(k).classList.remove('bad'); }
+      catch (e) { errs[k] = e.message; $('err' + k.slice(1)).textContent = e.message; $(k).classList.add('bad'); }
+    }
+    // order selects
+    for (let s = 0; s < 3; s++) {
+      const sel = $('o' + s);
+      sel.innerHTML = V.map((n, i) => `<option value="${i}">${n}</option>`).join('');
+      sel.value = state.ord[s];
+    }
+    $('orderOn').checked = state.orderOn;
+    $('ordrow').classList.toggle('off', !state.orderOn);
+    const orderValid = new Set(state.ord).size === 3;
+    $('oErr').textContent = state.orderOn && !orderValid ? 'Pick each angle once.' : '';
+    const useOrder = state.orderOn && orderValid;
+
+    if (Object.keys(errs).length) { M = null; return; }
+
+    // opp[i] = side across from vertex i
+    const opp = [f.e23, f.e13, f.e12];
+    const oppName = [n23, n13, n12];
+    const oppExpr = [state.e23, state.e13, state.e12];
+    const conds = [];
+    [[n12, f.e12], [n23, f.e23], [n13, f.e13]].forEach(([n, g]) =>
+      conds.push({ group: 'pos', label: n + ' > 0', h: g, kind: 'pos', a: g, name: n }));
+    if (useOrder) {
+      const [s, m, l] = state.ord;
+      conds.push({ group: 'ord', label: oppName[s] + ' < ' + oppName[m], h: x => opp[m](x) - opp[s](x), kind: 'lt', a: opp[s], b: opp[m], an: oppName[s], bn: oppName[m] });
+      conds.push({ group: 'ord', label: oppName[m] + ' < ' + oppName[l], h: x => opp[l](x) - opp[m](x), kind: 'lt', a: opp[m], b: opp[l], an: oppName[m], bn: oppName[l] });
+    }
+    const tri = [[f.e12, f.e23, f.e13, n12, n23, n13], [f.e12, f.e13, f.e23, n12, n13, n23], [f.e23, f.e13, f.e12, n23, n13, n12]];
+    tri.forEach(([p, q, c, pn, qn, cn]) =>
+      conds.push({ group: 'tri', label: pn + ' + ' + qn + ' > ' + cn, h: x => p(x) + q(x) - c(x), kind: 'sum', a: p, b: q, c }));
+
+    conds.forEach(c => c.set = solveSet(c.h));
+    const groups = { pos: ALL, ord: ALL, tri: ALL };
+    conds.forEach(c => groups[c.group] = intersect(groups[c.group], c.set));
+    const final = intersect(intersect(groups.pos, groups.ord), groups.tri);
+    const linear = [f.e12, f.e23, f.e13].every(isLinear);
+
+    M = { V, n12, n23, n13, f, opp, oppName, oppExpr, conds, groups, final, useOrder, linear };
+  }
+
+  // ---------- slider range & quick buttons ----------
+  function endpoints(sets) {
+    const pts = [];
+    sets.forEach(S => S.forEach(({ lo, hi }) => [lo, hi].forEach(v => { if (isFinite(v) && Math.abs(v) < R - 1) pts.push(v); })));
+    pts.sort((a, b) => a - b);
+    return pts.filter((v, i) => i === 0 || Math.abs(v - pts[i - 1]) > 1e-6);
+  }
+  function autoRange() {
+    if (!M) return;
+    const pts = endpoints(M.conds.map(c => c.set));
+    let lo = -10, hi = 10;
+    if (pts.length) { lo = Math.floor(pts[0] - 3); hi = Math.ceil(pts[pts.length - 1] + 3); }
+    if (hi - lo < 8) { const mid = (lo + hi) / 2; lo = Math.floor(mid - 4); hi = Math.ceil(mid + 4); }
+    state.xmin = lo; state.xmax = hi;
+  }
+  function setupSlider() {
+    const lo = state.xmin, hi = state.xmax, sl = $('x');
+    sl.min = lo; sl.max = hi; sl.step = (hi - lo) > 40 ? 0.5 : 0.1;
+    $('xmin').value = lo; $('xmax').value = hi;
+    if (!M) { $('jumps').innerHTML = ''; return; }
+    const srcSets = [];
+    ['pos', 'ord', 'tri'].forEach(g => {
+      if (M.groups[g].length) srcSets.push(M.groups[g]);
+      else M.conds.filter(c => c.group === g).forEach(c => srcSets.push(c.set));
+    });
+    const ends = endpoints(srcSets).filter(v => v >= lo && v <= hi);
+    const vals = [];
+    if (ends.length) {
+      const first = Math.max(lo, Math.floor(ends[0] - 1));
+      if (first < ends[0]) vals.push({ v: first });
+      ends.forEach((e, i) => {
+        vals.push({ v: e, edge: true });
+        if (i < ends.length - 1) {
+          const mid = (e + ends[i + 1]) / 2;
+          const nice = Math.round(mid) > e && Math.round(mid) < ends[i + 1] ? Math.round(mid) : Math.round(mid * 2) / 2;
+          if (nice > e && nice < ends[i + 1]) vals.push({ v: nice });
+        }
+      });
+      const last = Math.min(hi, Math.ceil(ends[ends.length - 1] + 1));
+      if (last > ends[ends.length - 1]) vals.push({ v: last });
+    } else {
+      vals.push({ v: 0 });
+    }
+    $('jumps').innerHTML = vals.slice(0, 16).map(o =>
+      `<button type="button" data-x="${o.v}" class="${o.edge ? 'edge' : ''}">x = ${shortLab(o.v)}</button>`).join('');
+  }
+
+  // ---------- drawing ----------
+  function el(name, attrs, parent, text) {
+    const e = document.createElementNS(NS, name);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e); return e;
+  }
+  function sidesAt(x) {
+    const c = M.f.e12(x), a = M.f.e23(x), b = M.f.e13(x); // a: V2V3, b: V1V3 (base), c: V1V2
+    return { a, b, c };
+  }
+  function triCoords({ a, b, c }) {
+    const kx = (c * c - a * a + b * b) / (2 * b);
+    return { kx, ky: Math.sqrt(Math.max(0, c * c - kx * kx)) };
+  }
+  const isTri = ({ a, b, c }) => a > EPS && b > EPS && c > EPS && a + b - c > EPS && a + c - b > EPS && b + c - a > EPS;
+
+  let frame = null;
+  function computeFrame() {
+    frame = null; if (!M) return;
+    const arcs = $('arcs').checked;
+    let minX = Infinity, maxX = -Infinity, maxY = 0;
+    for (let k = 0; k <= 400; k++) {
+      const x = state.xmin + (state.xmax - state.xmin) * k / 400;
+      const s = sidesAt(x);
+      if (!isTri(s)) continue;
+      const { kx, ky } = triCoords(s);
+      minX = Math.min(minX, 0, kx); maxX = Math.max(maxX, s.b, kx); maxY = Math.max(maxY, ky);
+      if (arcs) { minX = Math.min(minX, -s.c, s.b - s.a); maxX = Math.max(maxX, s.c, s.b + s.a); maxY = Math.max(maxY, s.c, s.a); }
+    }
+    if (isFinite(minX)) frame = { minX, maxX, maxY };
+  }
+
+  function draw(x) {
+    const svg = $('tri'); svg.innerHTML = '';
+    const W = 640, H = 400;
+    if (!M) { el('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', fill: 'var(--bad)', 'font-size': 18, 'font-weight': 700 }, svg, 'Fix the side expressions above to see the triangle.'); return; }
+    const V = M.V, s = sidesAt(x);
+    const vals = [[M.n12, s.c, 2], [M.n23, s.a, 0], [M.n13, s.b, 1]]; // [name, value, color index]
+
+    const nonpos = vals.filter(v => !(v[1] > EPS));
+    if (nonpos.length) {
+      el('text', { x: W / 2, y: 70, 'text-anchor': 'middle', fill: 'var(--bad)', 'font-size': 20, 'font-weight': 700 }, svg, 'No triangle: a side length isn’t positive');
+      vals.forEach(([n, v, ci], i) => {
+        const bad = !(v > EPS);
+        el('text', { x: W / 2, y: 150 + i * 46, 'text-anchor': 'middle', fill: bad ? 'var(--bad)' : COL[ci], 'font-size': 24, 'font-weight': 700 }, svg,
+          n + ' = ' + fmt(v) + (bad ? (Math.abs(v) < EPS ? '   (zero length)' : '   (negative)') : ''));
+      });
+      return;
+    }
+
+    if (!isTri(s)) {
+      const sorted = vals.slice().sort((p, q) => q[1] - p[1]);
+      const [L, P, Q] = sorted;
+      const sb = 520 / Math.max(L[1], P[1] + Q[1]);
+      const x0 = 50, y1 = 170, y2 = 250;
+      el('text', { x: W / 2, y: 60, 'text-anchor': 'middle', fill: 'var(--bad)', 'font-size': 20, 'font-weight': 700 }, svg, 'The sides can’t close: there’s no triangle');
+      el('text', { x: W / 2, y: 90, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 15 }, svg, 'The two shorter sides, end to end, compared with the longest side');
+      el('line', { x1: x0, y1, x2: x0 + P[1] * sb, y2: y1, stroke: COL[P[2]], 'stroke-width': 10 }, svg);
+      el('line', { x1: x0 + P[1] * sb, y1, x2: x0 + (P[1] + Q[1]) * sb, y2: y1, stroke: COL[Q[2]], 'stroke-width': 10 }, svg);
+      el('line', { x1: x0, y1: y2, x2: x0 + L[1] * sb, y2, stroke: COL[L[2]], 'stroke-width': 10 }, svg);
+      el('text', { x: x0 + P[1] * sb / 2, y: y1 - 16, 'text-anchor': 'middle', fill: COL[P[2]], 'font-size': 16, 'font-weight': 700 }, svg, P[0] + ' = ' + fmt(P[1]));
+      el('text', { x: x0 + (P[1] + Q[1] / 2) * sb, y: y1 - 16, 'text-anchor': 'middle', fill: COL[Q[2]], 'font-size': 16, 'font-weight': 700 }, svg, Q[0] + ' = ' + fmt(Q[1]));
+      el('text', { x: x0 + L[1] * sb / 2, y: y2 + 32, 'text-anchor': 'middle', fill: COL[L[2]], 'font-size': 16, 'font-weight': 700 }, svg, L[0] + ' = ' + fmt(L[1]));
+      const endA = x0 + (P[1] + Q[1]) * sb, endB = x0 + L[1] * sb;
+      [endA, endB].forEach(xx => el('line', { x1: xx, y1: y1 - 30, x2: xx, y2: y2 + 10, stroke: 'var(--bad)', 'stroke-width': 1.5, 'stroke-dasharray': '3 4' }, svg));
+      const gap = L[1] - P[1] - Q[1];
+      el('text', { x: W / 2, y: 340, 'text-anchor': 'middle', fill: 'var(--bad)', 'font-size': 17, 'font-weight': 700 }, svg,
+        Math.abs(gap) < EPS ? fmt(P[1]) + ' + ' + fmt(Q[1]) + ' equals ' + fmt(L[1]) + ' exactly, so the shape lies flat'
+                            : fmt(P[1]) + ' + ' + fmt(Q[1]) + ' = ' + fmt(P[1] + Q[1]) + ', short of ' + fmt(L[1]) + ' by ' + fmt(gap));
+      return;
+    }
+
+    const fr = frame || (() => { const t = triCoords(s); return { minX: Math.min(0, t.kx), maxX: Math.max(s.b, t.kx), maxY: t.ky }; })();
+    const sc = Math.min((W - 120) / (fr.maxX - fr.minX), (H - 120) / Math.max(fr.maxY, 1e-6));
+    const ox = 60 + (-fr.minX) * sc + ((W - 120) - (fr.maxX - fr.minX) * sc) / 2, oy = H - 55;
+    const P = (px, py) => [ox + px * sc, oy - py * sc];
+    const { kx, ky } = triCoords(s);
+    const [x1, y1] = P(0, 0), [x3, y3] = P(s.b, 0), [x2, y2] = P(kx, ky);
+
+    el('line', { x1: 0, y1: oy, x2: W, y2: oy, stroke: 'var(--line)', 'stroke-width': 1.5 }, svg);
+    if ($('arcs').checked) {
+      const rc = s.c * sc, ra = s.a * sc;
+      el('path', { d: `M ${x1 + rc} ${y1} A ${rc} ${rc} 0 0 0 ${x1 - rc} ${y1}`, fill: 'none', stroke: COL[2], 'stroke-width': 1.5, 'stroke-dasharray': '5 6', opacity: .7 }, svg);
+      el('path', { d: `M ${x3 + ra} ${y3} A ${ra} ${ra} 0 0 0 ${x3 - ra} ${y3}`, fill: 'none', stroke: COL[0], 'stroke-width': 1.5, 'stroke-dasharray': '5 6', opacity: .7 }, svg);
+    }
+    el('polygon', { points: `${x1},${y1} ${x2},${y2} ${x3},${y3}`, fill: 'var(--grid)', opacity: .55 }, svg);
+    el('line', { x1: x2, y1: y2, x2: x3, y2: y3, stroke: COL[0], 'stroke-width': 5, 'stroke-linecap': 'round' }, svg);
+    el('line', { x1: x1, y1: y1, x2: x3, y2: y3, stroke: COL[1], 'stroke-width': 5, 'stroke-linecap': 'round' }, svg);
+    el('line', { x1: x1, y1: y1, x2: x2, y2: y2, stroke: COL[2], 'stroke-width': 5, 'stroke-linecap': 'round' }, svg);
+
+    const cx = (x1 + x2 + x3) / 3, cy = (y1 + y2 + y3) / 3;
+    const sideLbl = (ax, ay, bx, by, txt, col) => {
+      const mx = (ax + bx) / 2, my = (ay + by) / 2, dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
+      let nx = -dy / len, ny = dx / len;
+      if ((mx - cx) * nx + (my - cy) * ny < 0) { nx = -nx; ny = -ny; }
+      el('text', { x: mx + nx * 24, y: my + ny * 24 + 6, 'text-anchor': 'middle', fill: col, 'font-size': 16, 'font-weight': 700 }, svg, txt);
+    };
+    sideLbl(x2, y2, x3, y3, M.n23 + ' = ' + fmt(s.a), COL[0]);
+    sideLbl(x1, y1, x3, y3, M.n13 + ' = ' + fmt(s.b), COL[1]);
+    sideLbl(x1, y1, x2, y2, M.n12 + ' = ' + fmt(s.c), COL[2]);
+
+    const A = angles(s);
+    [[x1, y1, 0], [x2, y2, 1], [x3, y3, 2]].forEach(([vx, vy, i]) => {
+      let dx = vx - cx, dy = vy - cy; const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
+      el('circle', { cx: vx, cy: vy, r: 6, fill: COL[i] }, svg);
+      const lx = vx + dx * 30, ly = vy + dy * 30 + (dy > 0 ? 4 : -6);
+      el('text', { x: lx, y: ly, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 20, 'font-weight': 700 }, svg, M.V[i]);
+      el('text', { x: lx, y: ly + 18, 'text-anchor': 'middle', fill: COL[i], 'font-size': 14, 'font-weight': 700 }, svg, fmt(A[i]) + '°');
+    });
+  }
+  function angles({ a, b, c }) {
+    const deg = r => r * 180 / Math.PI, cl = v => Math.max(-1, Math.min(1, v));
+    const A0 = deg(Math.acos(cl((b * b + c * c - a * a) / (2 * b * c))));
+    const A1 = deg(Math.acos(cl((a * a + c * c - b * b) / (2 * a * c))));
+    return [A0, A1, 180 - A0 - A1];
+  }
+
+  // ---------- number line ----------
+  function drawLine(x) {
+    const svg = $('nl'); svg.innerHTML = '';
+    if (!M) return;
+    const hide = $('hideAns').checked;
+    const rows = [];
+    rows.push({ label: 'Sides positive: ' + setText(M.groups.pos), set: M.groups.pos, col: 'var(--muted)' });
+    if (M.useOrder) rows.push({ label: 'Angle order: ' + setText(M.groups.ord), set: M.groups.ord, col: COL[1] });
+    rows.push({ label: 'Triangle Inequality: ' + setText(M.groups.tri), set: M.groups.tri, col: COL[2] });
+    rows.push({ label: 'All conditions: ' + setText(M.final), set: M.final, col: 'var(--ok)', bold: true });
+    const L = 24, Rr = 616, lo = state.xmin, hi = state.xmax;
+    const X = v => L + (v - lo) / (hi - lo) * (Rr - L);
+    const rowH = 38, top = 8;
+    const axisY = hide ? 40 : top + rows.length * rowH + 22;
+    const H = axisY + 40;
+    svg.setAttribute('viewBox', `0 0 640 ${H}`);
+
+    if (!hide) rows.forEach((r, i) => {
+      const y = top + i * rowH + 26;
+      el('text', { x: L, y: y - 10, fill: r.bold ? 'var(--ok)' : 'var(--muted)', 'font-size': 13.5, 'font-weight': r.bold ? 700 : 400 }, svg, r.label);
+      if (!r.set.length) { el('text', { x: Rr, y: y + 4, 'text-anchor': 'end', fill: 'var(--bad)', 'font-size': 13, 'font-weight': 700 }, svg, 'empty'); return; }
+      r.set.forEach(({ lo: a, hi: b }) => {
+        const ca = Math.max(a, lo), cb = Math.min(b, hi);
+        if (ca >= cb) return;
+        el('line', { x1: X(ca), y1: y, x2: X(cb), y2: y, stroke: r.col, 'stroke-width': r.bold ? 6 : 4 }, svg);
+        if (a >= lo) el('circle', { cx: X(a), cy: y, r: 5, fill: 'var(--panel)', stroke: r.col, 'stroke-width': 2.5 }, svg);
+        else el('path', { d: `M ${X(lo) - 2} ${y} l 9 -6 v 12 z`, fill: r.col }, svg);
+        if (b <= hi) el('circle', { cx: X(b), cy: y, r: 5, fill: 'var(--panel)', stroke: r.col, 'stroke-width': 2.5 }, svg);
+        else el('path', { d: `M ${X(hi) + 2} ${y} l -9 -6 v 12 z`, fill: r.col }, svg);
+      });
+    });
+
+    el('line', { x1: L, y1: axisY, x2: Rr, y2: axisY, stroke: 'var(--muted)', 'stroke-width': 1.5 }, svg);
+    const span = hi - lo, steps = [0.5, 1, 2, 5, 10, 20, 25, 50, 100];
+    const st = steps.find(s => span / s <= 12) || 100;
+    for (let v = Math.ceil(lo / st) * st; v <= hi + 1e-9; v += st) {
+      el('line', { x1: X(v), y1: axisY - 6, x2: X(v), y2: axisY + 6, stroke: 'var(--muted)', 'stroke-width': 1 }, svg);
+      el('text', { x: X(v), y: axisY + 24, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 13 }, svg, fmt(v));
+    }
+    if (x >= lo && x <= hi) {
+      const inside = M.final.some(({ lo: a, hi: b }) => x > a && x < b);
+      el('path', { d: `M ${X(x)} ${axisY - 2} l -8 -14 h 16 z`, fill: hide ? 'var(--ink)' : (inside ? 'var(--ok)' : 'var(--bad)') }, svg);
+    }
+  }
+
+  // ---------- checks panel ----------
+  function mark(ok) {
+    return ok === null ? '<span class="mark na">–</span>' :
+      ok ? '<span class="mark ok" aria-label="true">✓</span>' : '<span class="mark bad" aria-label="false">✗</span>';
+  }
+  const rel = d => d > EPS ? '>' : (Math.abs(d) <= EPS ? '=' : '<');
+  function checks(x) {
+    if (!M) { $('pairs').innerHTML = ''; $('checks').innerHTML = ''; return; }
+    const s = sidesAt(x), oppVal = [s.a, s.b, s.c];
+    $('pairs').innerHTML = [0, 1, 2].map(i =>
+      `<span class="sw" style="background:${COL[i]}"></span><b>∠${M.V[i]}</b><span>is across from ${M.oppName[i]} = ${prettyExpr(M.oppExpr[i])} = <b>${fmt(oppVal[i])}</b></span>`).join('');
+    let html = '';
+    const row = (ok, main, work) => `<li>${mark(ok)}<div>${main}<span class="work">${work}</span></div></li>`;
+
+    html += '<h3>Every side must be positive</h3><ul class="checks">';
+    M.conds.filter(c => c.group === 'pos').forEach(c => { const v = c.a(x); html += row(v > EPS, c.label, fmt(v) + ' ' + rel(v) + ' 0'); });
+    html += '</ul>';
+
+    if (M.useOrder) {
+      const [sm, md, lg] = state.ord;
+      html += `<h3>Bigger angle, longer opposite side</h3><ul class="checks">`;
+      M.conds.filter(c => c.group === 'ord').forEach(c => {
+        const a = c.a(x), b = c.b(x), d = b - a;
+        html += row(d > EPS, c.label, fmt(a) + ' ' + (d > EPS ? '<' : Math.abs(d) <= EPS ? '=' : '>') + ' ' + fmt(b));
+      });
+      const ord = `m∠${M.V[sm]} < m∠${M.V[md]} < m∠${M.V[lg]}`;
+      if (isTri(s)) {
+        const A = angles(s);
+        html += row(A[md] - A[sm] > 1e-7 && A[lg] - A[md] > 1e-7, ord, `${fmt(A[sm])}°, ${fmt(A[md])}°, ${fmt(A[lg])}°`);
+      } else html += row(null, ord, 'No triangle, so no angles to compare');
+      html += '</ul>';
+    }
+
+    html += '<h3>Triangle Inequality</h3><ul class="checks">';
+    M.conds.filter(c => c.group === 'tri').forEach(c => {
+      const p = c.a(x), q = c.b(x), r = c.c(x), d = p + q - r;
+      html += row(d > EPS, c.label, `${fmt(p)} + ${fmt(q)} = ${fmt(p + q)} ${rel(d)} ${fmt(r)}`);
+    });
+    html += '</ul>';
+    $('checks').innerHTML = html;
+  }
+
+  function status(x) {
+    const el2 = $('status');
+    if (!M) { el2.textContent = 'Fix the side expressions to continue.'; el2.className = 'status bad'; return; }
+    const s = sidesAt(x), X = 'x = ' + shortLab(x) + ': ';
+    const vals = [[M.n12, s.c], [M.n23, s.a], [M.n13, s.b]];
+    const bad = vals.find(v => !(v[1] > EPS));
+    let msg, ok = false;
+    if (bad) {
+      msg = X + bad[0] + ' = ' + fmt(bad[1]) + (Math.abs(bad[1]) <= EPS ? '. A side can’t have zero length.' : '. A side length can’t be negative.');
+    } else if (!isTri(s)) {
+      const sorted = vals.slice().sort((p, q) => q[1] - p[1]);
+      const gap = sorted[0][1] - sorted[1][1] - sorted[2][1];
+      msg = X + (Math.abs(gap) <= EPS
+        ? `${sorted[1][0]} + ${sorted[2][0]} equals ${sorted[0][0]} exactly, so the triangle collapses flat.`
+        : `${sorted[1][0]} + ${sorted[2][0]} is shorter than ${sorted[0][0]}, so no triangle forms.`);
+    } else if (M.useOrder) {
+      const [sm, md, lg] = state.ord, o = [s.a, s.b, s.c];
+      const d1 = o[md] - o[sm], d2 = o[lg] - o[md];
+      if (Math.abs(d1) <= EPS) msg = X + `∠${M.V[sm]} and ∠${M.V[md]} are equal, but the order needs strictly less than.`;
+      else if (Math.abs(d2) <= EPS) msg = X + `∠${M.V[md]} and ∠${M.V[lg]} are equal, but the order needs strictly less than.`;
+      else if (d1 < 0 || d2 < 0) msg = X + 'a triangle exists, but its angles are in the wrong order.';
+      else { msg = X + 'this works. Every condition is satisfied.'; ok = true; }
+    } else { msg = X + 'this works. The triangle exists.'; ok = true; }
+    el2.textContent = msg; el2.className = 'status ' + (ok ? 'ok' : 'bad');
+  }
+
+  // ---------- statement & solution ----------
+  function statement() {
+    const parts = [];
+    if (M && M.useOrder) { const [a, b, c] = state.ord; parts.push(`m∠${M.V[a]} < m∠${M.V[b]} < m∠${M.V[c]}`); }
+    const V = state.v.map(s => (s || '?').trim());
+    parts.push(`${V[0]}${V[1]} = ${prettyExpr(state.e12)}`, `${V[1]}${V[2]} = ${prettyExpr(state.e23)}`, `${V[0]}${V[2]} = ${prettyExpr(state.e13)}`);
+    $('statement').innerHTML = `In △${V.join('')}, ${parts.join(', ')}. ${M && M.useOrder ? 'What are the possible values of x?' : 'For which values of x does the triangle exist?'}`;
+  }
+  function solution() {
+    if (!M) { $('solTable').innerHTML = ''; $('final').textContent = ''; $('solNotes').textContent = ''; return; }
+    const names = { pos: 'Every side must be positive', ord: 'Angle order → side order', tri: 'Triangle Inequality' };
+    let html = '';
+    ['pos', 'ord', 'tri'].forEach(g => {
+      const cs = M.conds.filter(c => c.group === g);
+      if (!cs.length) return;
+      html += `<tr class="group"><td>${names[g]}</td><td>${setText(M.groups[g])}</td></tr>`;
+      cs.forEach(c => html += `<tr><td>${c.label}</td><td>${setText(c.set)}</td></tr>`);
+    });
+    $('solTable').innerHTML = html;
+    const fin = $('final');
+    fin.textContent = M.final.length ? 'Answer: ' + setText(M.final) : 'Answer: no value of x works.';
+    fin.className = 'final' + (M.final.length ? '' : ' none');
+    const notes = ['Every inequality is strict, so boundary values are never included.',
+      'The positive-side conditions never change the answer on their own: adding any two Triangle Inequality statements shows each side is positive. They’re listed so students can see why negative lengths are ruled out.'];
+    if (M.useOrder) notes.push('Because the sides must line up in the same order as their opposite angles, the angle order turns into two side inequalities.');
+    if (!M.linear) notes.push('At least one expression isn’t linear, so boundaries were found numerically for x between −200 and 200.');
+    $('solNotes').textContent = notes.join(' ');
+  }
+
+  // ---------- update cycle ----------
+  function full(rangeAuto) {
+    build();
+    if (rangeAuto || state.xmin == null || state.xmax == null || !(state.xmax > state.xmin)) autoRange();
+    if (state.xmin == null) { state.xmin = -10; state.xmax = 10; }
+    computeFrame();
+    setupSlider();
+    statement();
+    solution();
+    frameUpdate();
+    save();
+  }
+  function frameUpdate() {
+    const x = state.x;
+    $('x').value = x;
+    if (document.activeElement !== $('xnum')) $('xnum').value = Math.round(x * 1e6) / 1e6;
+    draw(x); checks(x); status(x); drawLine(x);
+    $('app').classList.toggle('hidden-answer', $('hideAns').checked);
+  }
+
+  function readInputs() {
+    state.v = [0, 1, 2].map(i => $('v' + i).value);
+    state.e12 = $('e12').value; state.e23 = $('e23').value; state.e13 = $('e13').value;
+    state.orderOn = $('orderOn').checked;
+    state.ord = [0, 1, 2].map(i => parseInt($('o' + i).value, 10));
+  }
+  function fillInputs() {
+    [0, 1, 2].forEach(i => $('v' + i).value = state.v[i]);
+    $('e12').value = state.e12; $('e23').value = state.e23; $('e13').value = state.e13;
+    $('orderOn').checked = state.orderOn;
+  }
+
+  let t = null;
+  ['v0', 'v1', 'v2', 'e12', 'e23', 'e13'].forEach(id => $(id).addEventListener('input', () => {
+    readInputs(); clearTimeout(t); t = setTimeout(() => full(true), 250);
+  }));
+  ['orderOn', 'o0', 'o1', 'o2'].forEach(id => $(id).addEventListener('change', () => { readInputs(); full(true); }));
+  $('preset').addEventListener('change', e => {
+    const p = PRESETS[e.target.value]; if (!p) return;
+    state = Object.assign({}, JSON.parse(JSON.stringify(p)), { xmin: null, xmax: null });
+    fillInputs(); full(true); e.target.value = '';
+  });
+  $('x').addEventListener('input', () => { state.x = parseFloat($('x').value); frameUpdate(); save(); });
+  $('xnum').addEventListener('input', () => {
+    const v = parseFloat($('xnum').value); if (!isFinite(v)) return;
+    state.x = v;
+    if (v < state.xmin || v > state.xmax) { state.xmin = Math.floor(Math.min(v, state.xmin)); state.xmax = Math.ceil(Math.max(v, state.xmax)); computeFrame(); setupSlider(); }
+    frameUpdate(); save();
+  });
+  ['xmin', 'xmax'].forEach(id => $(id).addEventListener('change', () => {
+    const lo = parseFloat($('xmin').value), hi = parseFloat($('xmax').value);
+    if (isFinite(lo) && isFinite(hi) && hi > lo) { state.xmin = lo; state.xmax = hi; computeFrame(); setupSlider(); frameUpdate(); save(); }
+  }));
+  $('autoRange').addEventListener('click', () => { autoRange(); computeFrame(); setupSlider(); frameUpdate(); save(); });
+  $('jumps').addEventListener('click', e => {
+    const b = e.target.closest('[data-x]'); if (!b) return;
+    state.x = parseFloat(b.dataset.x); frameUpdate(); save();
+  });
+  $('arcs').addEventListener('change', () => { computeFrame(); frameUpdate(); });
+  $('hideAns').addEventListener('change', frameUpdate);
+
+  fillInputs();
+  full(state.xmin == null);
+})();
+</script>
+</body>
+</html>
